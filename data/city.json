@@ -13,6 +13,13 @@
             "name": "Sydney",
             "created_at": 1715412378.488731,
             "updated_at": 1715412378.488731
+        },
+        {
+            "id": "f8cd4655-8023-49e7-b36a-f21b9b2df946",
+            "name": "Miami",
+            "country_id": "f9948747-3b60-419b-a92f-5ee31882a6d7",
+            "created_at": 1718184586.291709,
+            "updated_at": 1718184586.291709
         }
     ]
 }

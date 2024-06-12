@@ -76,3 +76,15 @@ class FileStorage():
                 grouped_data[place_id].append(amenity_id)
 
         return grouped_data
+    
+    def save_model_data(self, filename, data):
+        """Save data to JSON file"""
+        if not isinstance(data, dict):
+            raise ValueError("Data should be a dictionary")
+
+        try:
+            with open(filename, 'a') as f:
+                json.dump(data, f)
+        except IOError as exc:
+            raise IOError(f"Unable to save data to file '{filename}'") from exc
+

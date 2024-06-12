@@ -17,6 +17,15 @@
             "rating": 0.1,
             "created_at": 1715575358.020792,
             "updated_at": 1715575358.020792
+        },
+        {
+            "id": "353310e7-ffa1-4aaa-b5dd-d172e691681f",
+            "commentor_user_id": "460897e2-5953-40ea-8773-00a2851a1ba8",
+            "place_id": "90c83333-35d4-4638-bdd8-1eceac56915e",
+            "rating": 5,
+            "feedback": "This place was amazing! Highly recommended.",
+            "created_at": 1718184952.021992,
+            "updated_at": 1718184952.021998
         }
     ]
 }

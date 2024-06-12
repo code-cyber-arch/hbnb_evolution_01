@@ -4,6 +4,7 @@ from datetime import datetime
 import uuid
 import re
 from data import country_data
+import json
 
 class City():
     """Representation of city """
@@ -25,7 +26,28 @@ class City():
             for key, value in kwargs.items():
                 if key == "country_id" or key == "name":
                     setattr(self, key, value)
+        self.save()
 
+    def save(self):
+        city_entry = {
+            'id': self.id,
+            'name': self.name,
+            'country_id': self.country_id,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
+        }
+        file_path = 'data/city.json'
+        try:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+            data['City'].append(city_entry)
+            with open(file_path, 'w') as file:
+                json.dump(data, file, indent=4)
+            return True  # Indicate success
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error saving city entry: {e}")
+            return False  # Indicate failure
+    
     @property
     def name(self):
         """Getter for private prop name"""
