@@ -1,14 +1,21 @@
 #!/usr/bin/python
+"""
+Country Module
+
+This module defines the Country class, representing a country with attributes such as
+name and code. It includes functionality to save country data to a JSON file.
+"""
 
 from datetime import datetime
 import uuid
 import re
-from data import country_data
+import json
+
 
 class Country():
     """Representation of country """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **kwargs):
         """ constructor """
         # super().__init__(*args, **kwargs)
 
@@ -25,6 +32,33 @@ class Country():
             for key, value in kwargs.items():
                 if key == "name" or key == "code":
                     setattr(self, key, value)
+        self.save()
+
+    def save(self):
+        """
+        Save the country data to 'data/country.json'.
+        
+        Returns:
+            bool: True if the country was successfully saved, False otherwise.
+        """
+        country_entry = {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at
+        }
+        file_path = 'data/country.json'
+        try:
+            with open(file_path, 'r', encoding="utf-8") as file:
+                data = json.load(file)
+            data['Country'].append(country_entry)
+            with open(file_path, 'w', encoding="utf-8") as file:
+                json.dump(data, file, indent=4)
+            return True
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error saving country entry: {e}")
+            return False
 
     @property
     def name(self):
@@ -40,7 +74,7 @@ class Country():
         if is_valid_name:
             self.__name = value
         else:
-            raise ValueError("Invalid country name specified: {}".format(value))
+            raise ValueError(f"Invalid country name specified: {value}")
 
     @property
     def code(self):
@@ -56,4 +90,4 @@ class Country():
         if is_valid_code:
             self.__code = value
         else:
-            raise ValueError("Invalid country code specified: {}".format(value))
+            raise ValueError(f"Invalid country code specified: {value}")

@@ -1,15 +1,22 @@
 #!/usr/bin/python
+"""
+City Module
+
+This module defines the City class, representing a city with attributes such as
+name and country_id. It includes functionality to save city data to a JSON file.
+"""
 
 from datetime import datetime
 import uuid
 import re
-from data import country_data
 import json
+from data import country_data
+
 
 class City():
     """Representation of city """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **kwargs):
         """ constructor """
         # super().__init__(*args, **kwargs)
 
@@ -29,6 +36,12 @@ class City():
         self.save()
 
     def save(self):
+        """
+        Save the city data to 'data/city.json'.
+        
+        Returns:
+            bool: True if the city was successfully saved, False otherwise.
+        """
         city_entry = {
             'id': self.id,
             'name': self.name,
@@ -38,16 +51,16 @@ class City():
         }
         file_path = 'data/city.json'
         try:
-            with open(file_path, 'r') as file:
+            with open(file_path, 'r', encoding="utf-8") as file:
                 data = json.load(file)
             data['City'].append(city_entry)
-            with open(file_path, 'w') as file:
+            with open(file_path, 'w', encoding="utf-8") as file:
                 json.dump(data, file, indent=4)
             return True  # Indicate success
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error saving city entry: {e}")
             return False  # Indicate failure
-    
+
     @property
     def name(self):
         """Getter for private prop name"""
@@ -62,7 +75,7 @@ class City():
         if is_valid_name:
             self.__name = value
         else:
-            raise ValueError("Invalid city name specified: {}".format(value))
+            raise ValueError(f"Invalid city name specified: {value}")
 
     @property
     def country_id(self):
@@ -77,4 +90,4 @@ class City():
         if country_data.get(value) is not None:
             self.__country_id = value
         else:
-            raise ValueError("Invalid country_id specified: {}".format(value))
+            raise ValueError(f"Invalid country_id specified: {value}")

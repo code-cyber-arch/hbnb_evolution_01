@@ -79,8 +79,6 @@ class FileStorage():
     
     def save_model_data(self, filename, data):
         """Save data to JSON file"""
-        if not isinstance(data, dict):
-            raise ValueError("Data should be a dictionary")
 
         try:
             with open(filename, 'a') as f:

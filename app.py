@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import json
 from datetime import datetime
 from flask import Flask, jsonify, request, abort
 from models.city import City
@@ -8,7 +9,9 @@ from models.user import User
 from models.amenity import Amenity
 from models.place import Place
 from models.review import Review
-from data import country_data, place_data, amenity_data, place_to_amenity_data, review_data, user_data, city_data
+from data import (country_data, place_data,
+                  amenity_data, review_data,
+                  user_data, city_data)
 
 app = Flask(__name__)
 
@@ -24,89 +27,6 @@ def hello_world_post():
     return "hello world\n"
 
 
-# Examples
-@app.route('/example/country_data')
-def example_country_data():
-    """ Example to show that we can view data loaded in the data module's init """
-    return jsonify(country_data)
-
-@app.route('/example/cities')
-def example_cities():
-    """ Example route to showing usage of the City model class """
-
-    # We will be appending dictionaries to the list instead of City objects
-    # This is so we can print them out on the webpage
-    # If there is no need to display the data, we can consider storing the City objects themselves
-    cities_list = []
-
-    # the 'hello' and 'world' params below will be filtered off in City constructor
-    cities_list.append(City(name="Gotham", hello="hello").__dict__)
-    cities_list.append(City(name="Metropolis", world="world").__dict__)
-
-    # Validation: The city with the invalid name is not appended to the list
-    try:
-        cities_list.append(City(name="#$%^&**", country_id=2).__dict__)
-    except ValueError as exc:
-        # This is printed internally in the server output. Not shown on website.
-        print("City creation Error - ", exc)
-
-    # Validation: The city with the invalid country_id is not appended to the list
-    try:
-        cities_list.append(City(name="Duckburg", country_id=1234).__dict__)
-    except ValueError as exc:
-        print("City creation Error - ", exc)
-
-    # Note that private attributes have a weird key format. e.g. "_City__country_id"
-    # This shows that the output of the City object's built-in __dict__ is not usable as-is
-
-    return cities_list
-
-@app.route('/example/places_amenties_raw')
-def example_places_amenities_raw():
-    """ Prints out the raw data for relationships between places and their amenities """
-    return jsonify(place_to_amenity_data)
-
-@app.route('/example/places_amenties_prettified_example')
-def example_places_amenties_prettified():
-    """ Prints out the relationships between places and their amenities using names """
-
-    output = {}
-
-    for place_key in place_to_amenity_data:
-        place_name = place_data[place_key]['name']
-        if place_name not in output:
-            output[place_name] = []
-
-        amenities_ids = place_to_amenity_data[place_key]
-        for amenity_key in amenities_ids:
-            amenity_name = amenity_data[amenity_key]['name']
-            output[place_name].append(amenity_name)
-
-    return jsonify(output)
-
-@app.route('/example/places_reviews')
-def example_places_reviews():
-    """ prints out reviews of places """
-
-    output = {}
-
-    for key in review_data:
-        row = review_data[key]
-        place_id = row['place_id']
-        place_name = place_data[place_id]['name']
-        if place_name not in output:
-            output[place_name] = []
-        
-        reviewer = user_data[row['commentor_user_id']]
-
-        output[place_name].append({
-            "review": row['feedback'],
-            "rating": str(row['rating'] * 5) + " / 5",
-            "reviewer": reviewer['first_name'] + " " + reviewer['last_name']
-        })
-
-    return jsonify(output)
-
 # Consider adding other test routes to display data for:
 # - the places within the countries
 # - which places are owned by which users
@@ -119,7 +39,7 @@ def users_get():
     """returns Users"""
     data = []
 
-    for k, v in user_data.items():
+    for _, v in user_data.items():
         data.append({
             "id": v['id'],
             "first_name": v['first_name'],
@@ -173,7 +93,10 @@ def users_post():
         abort(400, "Missing password")
 
     try:
-        u = User(first_name=data["first_name"],last_name=data["last_name"], email=data["email"], password=data["password"])
+        u = User(first_name=data["first_name"],
+                 last_name=data["last_name"],
+                 email=data["email"],
+                 password=data["password"])
     except ValueError as exc:
         return repr(exc) + "\n"
 
@@ -214,7 +137,7 @@ def users_put(user_id):
     data = request.get_json()
 
     if user_id not in user_data:
-        abort(400, "User not found for id {}".format(user_id))
+        abort(400, f"User not found for id {user_id}")
 
     u = user_data[user_id]
 
@@ -245,7 +168,7 @@ def delete_user(user_id):
     """ deletes an existing user using specified id """
     # Check if the user exists
     if user_id not in user_data:
-        abort(404, "User not found for id {}".format(user_id))
+        abort(404, f"User not found for id {user_id}")
 
     # Remove the user from the data store
     del user_data[user_id]
@@ -304,7 +227,7 @@ def countries_get():
     """ returns countires data """
     data = []
 
-    for k, v in country_data.items():
+    for _, v in country_data.items():
         data.append({
             "id": v['id'],
             "name": v['name'],
@@ -318,7 +241,7 @@ def countries_get():
 @app.route('/api/v1/countries/<country_code>', methods=["GET"])
 def countries_specific_get(country_code):
     """ returns specific country data """
-    for k, v in country_data.items():
+    for _, v in country_data.items():
         if v['code'] == country_code:
             data = v
 
@@ -351,7 +274,7 @@ def countries_put(country_code):
             c = v
 
     if not c:
-        abort(400, "Country not found for code {}".format(country_code))
+        abort(400, f"Country not found for code {country_code}")
 
     # modify the values
     # only name is allowed to be modified
@@ -379,11 +302,11 @@ def countries_specific_cities_get(country_code):
     data = []
     wanted_country_id = ""
 
-    for k, v in country_data.items():
+    for _, v in country_data.items():
         if v['code'] == country_code:
             wanted_country_id = v['id']
 
-    for k, v in city_data.items():
+    for _, v in city_data.items():
         if v['country_id'] == wanted_country_id:
             data.append({
                 "id": v['id'],
@@ -413,7 +336,7 @@ def cities_get():
     """returns Cities"""
     data = []
 
-    for k, v in city_data.items():
+    for _, v in city_data.items():
         data.append({
             "id": v['id'],
             "name": v['name'],
@@ -457,7 +380,7 @@ def cities_post():
 
     # Validate country_code
     country_id = None
-    for k, v in country_data.items():
+    for _, v in country_data.items():
         if v['code'] == data['country_code']:
             country_id = v['id']
             break
@@ -506,7 +429,7 @@ def cities_put(city_id):
 
     # Validate country_code
     country_id = None
-    for k, v in country_data.items():
+    for _, v in country_data.items():
         if v['code'] == data['country_code']:
             country_id = v['id']
             break
@@ -549,7 +472,7 @@ def amenities_get():
     """returns Amenities"""
     data = []
 
-    for k, v in amenity_data.items():
+    for _, v in amenity_data.items():
         data.append({
             "id": v['id'],
             "name": v['name'],
@@ -579,6 +502,7 @@ def amenities_specific_get(amenity_id):
 
 @app.route('/api/v1/amenities/<amenity_id>', methods=['PUT'])
 def update_amenity(amenity_id):
+    """Upadate amenities"""
     if request.get_json() is None:
         abort(400, "Not a JSON")
 
@@ -590,8 +514,8 @@ def update_amenity(amenity_id):
         abort(400, "Missing or empty name")
 
     # Ensure amenity name is unique
-    for id, amenity in amenity_data.items():
-        if amenity['name'] == data['name'] and id != amenity_id:
+    for i, amenity in amenity_data.items():
+        if amenity['name'] == data['name'] and i != amenity_id:
             abort(409, "Amenity name must be unique")
 
     amenity_data[amenity_id]['name'] = data['name']
@@ -602,6 +526,7 @@ def update_amenity(amenity_id):
 
 @app.route('/api/v1/amenities/<amenity_id>', methods=['DELETE'])
 def delete_amenity(amenity_id):
+    """Delete amenities"""
     if amenity_id not in amenity_data:
         return jsonify({"message": "Amenity not found"}), 404
 
@@ -706,6 +631,7 @@ def create_place():
 
 @app.route('/api/v1/places/<place_id>', methods=['PUT'])
 def update_place(place_id):
+    """Update places"""
     if place_id not in place_data:
         return jsonify({"message": "Place not found"}), 404
 
@@ -773,7 +699,8 @@ def get_reviews_by_user(user_id):
     if user_id not in user_data:
         return "User not found!"
 
-    user_reviews = [review for review in review_data.values() if review['commentor_user_id'] == user_id]
+    user_reviews = [review for review in review_data.values()
+                    if review['commentor_user_id'] == user_id]
     for review in user_reviews:
         try:
             data.append({
@@ -853,7 +780,7 @@ def update_review(review_id):
         return jsonify({"message": "Not a JSON"}), 400
 
     data = request.get_json()
-    
+
     review = review_data[review_id]
 
     # Update the review data
@@ -864,14 +791,14 @@ def update_review(review_id):
             review['place_id'] = data['place_id']
         if 'rating' in data:
             rating = data['rating']
-            if not (1 <= rating <= 5):
+            if not 1 <= rating <= 5:
                 raise ValueError("Rating must be between 1 and 5")
             review['rating'] = rating
         if 'feedback' in data:
             review['feedback'] = data['feedback']
-        
+
         review['updated_at'] = datetime.now().timestamp()
-        
+
         return jsonify(review), 200
     except KeyError as e:
         return jsonify({"message": f"Missing key {e} in review data"}), 400
@@ -890,6 +817,7 @@ def delete_review(review_id):
 
 @app.route('/api/v1/places/<place_id>/reviews', methods=["POST"])
 def create_review(place_id):
+    """Create new review"""
     if request.get_json() is None:
         abort(400, "Not a JSON")
 
@@ -918,8 +846,8 @@ def create_review(place_id):
     except ValueError as exc:
         return repr(exc) + "\n"
 
-    # Add the new review to review_data
-    review_data[review.id] = {
+    # New review entry
+    review_entry = {
         'id': review.id,
         'commentor_user_id': review.commentor_user_id,
         'place_id': review.place_id,
@@ -928,8 +856,18 @@ def create_review(place_id):
         'created_at': review.created_at,
         'updated_at': review.updated_at
     }
+    file_path = 'data/review.json'
+    try:
+        with open(file_path, 'r', encoding="utf-8") as file:
+            data = json.load(file)
+        data['Review'].append(review_entry)
+        with open(file_path, 'w', encoding="utf-8") as file:
+            json.dump(data, file, indent=4)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error saving review entry: {e}")
+        abort(500, "Error saving the review")
 
-    return jsonify(review_data[review.id]), 201
+    return jsonify(review_entry), 201
 
 # Set debug=True for the server to auto-reload when there are changes
 if __name__ == '__main__':
